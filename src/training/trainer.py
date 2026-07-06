@@ -227,4 +227,69 @@ class GNNTrainer:
         """
         self.model.eval()
         
-        with torch.no
+        with torch.no_grad():
+            out = self.model(data)
+            pred = out.argmax(dim=1)
+            probs = F.softmax(out, dim=1)
+            
+            y_true = data.y[test_mask].cpu().numpy()
+            y_pred = pred[test_mask].cpu().numpy()
+            y_probs = probs[test_mask, 1].cpu().numpy()
+            
+            # Calculate metrics
+            metrics = {
+                'accuracy': accuracy_score(y_true, y_pred),
+                'precision': precision_score(y_true, y_pred, average='weighted', zero_division=0),
+                'recall': recall_score(y_true, y_pred, average='weighted', zero_division=0),
+                'f1': f1_score(y_true, y_pred, average='weighted'),
+                'roc_auc': roc_auc_score(y_true, y_probs)
+            }
+            
+            # Additional metrics for imbalanced data
+            if len(np.unique(y_true)) == 2:
+                # Binary classification - calculate fraud detection metrics
+                fraud_mask = y_true == 1
+                if fraud_mask.any():
+                    metrics['fraud_recall'] = recall_score(y_true, y_pred, pos_label=1, zero_division=0)
+                    metrics['fraud_precision'] = precision_score(y_true, y_pred, pos_label=1, zero_division=0)
+                    metrics['fraud_f1'] = f1_score(y_true, y_pred, pos_label=1, zero_division=0)
+            
+            # Confusion matrix
+            from sklearn.metrics import confusion_matrix
+            metrics['confusion_matrix'] = confusion_matrix(y_true, y_pred).tolist()
+            
+        logger.info(f"Test Results: Accuracy: {metrics['accuracy']:.4f}, F1: {metrics['f1']:.4f}")
+        
+        return metrics
+    
+    def predict(self, data, threshold: float = 0.5):
+        """
+        Get predictions with probability
+        """
+        self.model.eval()
+        
+        with torch.no_grad():
+            out = self.model(data)
+            probs = F.softmax(out, dim=1)
+            preds = (probs[:, 1] > threshold).long()
+            
+        return preds.cpu().numpy(), probs.cpu().numpy()
+    
+    def save_model(self, path: str):
+        """Save model state"""
+        torch.save({
+            'model_state_dict': self.model.state_dict(),
+            'history': self.history,
+            'config': {
+                'model_class': self.model.__class__.__name__,
+                'device': self.device
+            }
+        }, path)
+        logger.info(f"Model saved to {path}")
+    
+    def load_model(self, path: str):
+        """Load model state"""
+        checkpoint = torch.load(path, map_location=self.device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.history = checkpoint['history']
+        logger.info(f"Model loaded from {path}")
