@@ -1,0 +1,83 @@
+# GNN Fraud Detection - Configuration File
+
+# Data Settings
+data:
+  raw_path: "data/raw/fraud_data.csv"
+  processed_path: "data/processed/"
+  test_size: 0.15
+  val_size: 0.15
+  random_seed: 42
+
+# Graph Construction
+graph:
+  k_neighbors: 10           # For k-NN graph construction
+  edge_weight: "amount"     # Transaction amount as edge weight
+  node_features:            # Features to use for nodes
+    - "V1"
+    - "V2"
+    - "V3"
+    - "V4"
+    - "V5"
+    - "V6"
+    - "V7"
+    - "V8"
+    - "V9"
+    - "V10"
+    - "V11"
+    - "V12"
+    - "V13"
+    - "V14"
+    - "V15"
+    - "V16"
+    - "V17"
+    - "V18"
+    - "V19"
+    - "V20"
+    - "V21"
+    - "V22"
+    - "V23"
+    - "V24"
+    - "V25"
+    - "V26"
+    - "V27"
+    - "V28"
+    - "Amount"
+  normalize_features: true
+
+# Model Settings
+model:
+  architecture: "gat"        # gcn, graphsage, gat, or ensemble
+  hidden_channels: 64
+  num_layers: 2
+  dropout: 0.3
+  learning_rate: 0.001
+  weight_decay: 0.0005
+
+# Training Settings
+training:
+  epochs: 100
+  batch_size: 4096           # For mini-batch training
+  early_stopping_patience: 20
+  class_weight: true        # Handle imbalanced data
+  use_edge_weights: true
+
+# Evaluation
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+  threshold: 0.5
+
+# Visualization
+visualization:
+  style: "seaborn-v0_8-darkgrid"
+  save_plots: true
+  plot_size: [12, 8]
+
+# Output
+output:
+  model_save_path: "models/gnn_fraud_model.pt"
+  results_path: "results/"
